@@ -2,261 +2,44 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>היומן שלי - מקסום התהליך</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #fce4ec;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        h1, h2 {
-            text-align: center;
-            color: #c2185b;
-        }
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin: 15px 0 5px;
-            font-weight: bold;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-family: inherit;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #d81b60;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 15px;
-            font-weight: bold;
-        }
-        button:hover {
-            background-color: #ad1457;
-        }
-        .hidden {
-            display: none;
-        }
-        .quick-btn {
-            background-color: #f48fb1;
-            margin-bottom: 5px;
-            margin-left: 5px;
-            width: auto;
-            display: inline-block;
-            padding: 8px 15px;
-            border-radius: 20px;
-        }
-        .quick-btn:hover {
-            background-color: #f06292;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: right;
-        }
-        th {
-            background-color: #f8bbd0;
-        }
-        tr:hover {
-            background-color: #f1f1f1;
-            cursor: pointer;
-        }
-    </style>
+    <title>היומן שלי</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-
     <h1>המסע שלי 🌸</h1>
-
-    <!-- שלב 1: אישור לפני ארוחה -->
-    <div id="preMealSection" class="card">
-        <h2>שלבי הכנה לארוחה</h2>
-        
-        <label>רמת רעב (1-5):</label>
-        <input type="number" id="hungerLevel" min="1" max="5" placeholder="1 = לא רעבה, 5 = מורעבת">
-
-        <label>מתחשק לי משהו:</label>
-        <select id="flavorPref">
-            <option value="מתוק">מתוק</option>
-            <option value="מלוח">מלוח</option>
-            <option value="גם וגם">גם וגם</option>
-        </select>
-
-        <label>בכמה אחוזים תהיי מסופקת מהארוחה הזו?</label>
-        <input type="number" id="satisfaction" min="0" max="100" placeholder="הזיני אחוזים (לדוגמה: 85)">
-
-        <button onclick="checkApproval()">בדקי אם קיבלת אישור</button>
-        <p id="approvalMessage" style="text-align: center; font-weight: bold; margin-top: 15px;"></p>
-    </div>
-
-    <!-- שלב 2: הזנת פרטי הארוחה (מוסתר עד לאישור) -->
-    <div id="mealDetailsSection" class="card hidden">
-        <h2>בתאבון! פרטי הארוחה</h2>
-        
-        <label>מה אכלת?</label>
-        <div>
-            <button class="quick-btn" onclick="addFood('פסטה עם טונה')">+ פסטה עם טונה</button>
-            <button class="quick-btn" onclick="addFood('פלאפל')">+ פלאפל</button>
-            <button class="quick-btn" onclick="addFood('ארוחת גבינות')">+ גבינות</button>
-        </div>
-        <textarea id="foodDetails" rows="3" placeholder="הקלידי כאן או השתמשי בכפתורים המהירים..."></textarea>
-
-        <label>איך אני מרגישה אחרי הארוחה? (לא חובה)</label>
-        <textarea id="afterFeelings" rows="3" placeholder="פרקי כאן חופשי..."></textarea>
-
-        <button onclick="saveMeal()">שמרי ארוחה</button>
-    </div>
-
-    <!-- שלב 3: היסטוריית ארוחות -->
-    <div class="card">
-        <h2>יומן ארוחות</h2>
-        <table id="historyTable">
-            <thead>
-                <tr>
-                    <th>תאריך</th>
-                    <th>שעה</th>
-                    <th>מה אכלתי</th>
-                </tr>
-            </thead>
-            <tbody id="historyBody">
-                <!-- נתונים יתווספו לכאן דינמית -->
-            </tbody>
-        </table>
-    </div>
+    <input type="text" id="foodInput" placeholder="מה אכלתי?">
+    <button onclick="saveToCloud()">שמרי לענן</button>
 
     <script>
-        let currentMealData = {};
+        // המפתחות שלך
+        const firebaseConfig = {
+            apiKey: "AIzaSyDsCb5PySFnEH-6aEg4vpkAJvuXOueRQ6A",
+            authDomain: "foodlog-34143.firebaseapp.com",
+            projectId: "foodlog-34143",
+            storageBucket: "foodlog-34143.firebasestorage.app",
+            messagingSenderId: "340021087859",
+            appId: "1:340021087859:web:8f401ae72a35c13c77e406"
+        };
 
-        // פונקציה לאישור הארוחה לפי חוק ה-80%
-        function checkApproval() {
-            const hunger = document.getElementById('hungerLevel').value;
-            const flavor = document.getElementById('flavorPref').value;
-            const satisfaction = parseInt(document.getElementById('satisfaction').value);
+        // אתחול בשיטה הישנה שתואמת לקישורים שלך
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-            if (!hunger || !satisfaction) {
-                alert("אנא מלאי את כל השדות בשלב ההכנה.");
-                return;
-            }
-
-            if (satisfaction >= 80) {
-                document.getElementById('approvalMessage').innerHTML = "✅ קיבלת אישור! הציפייה לסיפוק גבוהה. שיהיה בתאבון!";
-                document.getElementById('approvalMessage').style.color = "green";
-                
-                // שמירת נתונים זמנית ושעת התחלה
-                currentMealData = {
-                    hunger: hunger,
-                    flavor: flavor,
-                    satisfaction: satisfaction,
-                    startTime: new Date().toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})
-                };
-
-                // חשיפת שלב הזנת הארוחה
-                document.getElementById('mealDetailsSection').classList.remove('hidden');
-            } else {
-                document.getElementById('approvalMessage').innerHTML = "❌ רמת הסיפוק נמוכה מ-80%. אולי כדאי לחשוב על אפשרות אחרת שתעשה לך יותר טוב?";
-                document.getElementById('approvalMessage').style.color = "red";
-                document.getElementById('mealDetailsSection').classList.add('hidden');
-            }
-        }
-
-        // פונקציה להוספה מהירה של מאכלים קבועים
-        function addFood(foodItem) {
-            const foodInput = document.getElementById('foodDetails');
-            if(foodInput.value.length > 0) {
-                foodInput.value += ", " + foodItem;
-            } else {
-                foodInput.value = foodItem;
-            }
-        }
-
-        // שמירת הארוחה ל-LocalStorage
-        function saveMeal() {
-            const foodDetails = document.getElementById('foodDetails').value;
-            const afterFeelings = document.getElementById('afterFeelings').value;
-            
-            if (!foodDetails) {
-                alert("אנא הזיני מה אכלת.");
-                return;
-            }
-
-            const now = new Date();
-            currentMealData.food = foodDetails;
-            currentMealData.feelings = afterFeelings;
-            currentMealData.endTime = now.toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
-            currentMealData.date = now.toLocaleDateString('he-IL');
-
-            // משיכת היסטוריה קיימת או יצירת מערך חדש
-            let mealsHistory = JSON.parse(localStorage.getItem('mealsData')) || [];
-            mealsHistory.push(currentMealData);
-            localStorage.setItem('mealsData', JSON.stringify(mealsHistory));
-
-            // איפוס הטופס
-            document.getElementById('hungerLevel').value = '';
-            document.getElementById('satisfaction').value = '';
-            document.getElementById('foodDetails').value = '';
-            document.getElementById('afterFeelings').value = '';
-            document.getElementById('approvalMessage').innerHTML = '';
-            document.getElementById('mealDetailsSection').classList.add('hidden');
-
-            loadHistory();
-        }
-
-        // הצגת ההיסטוריה בטבלה
-        function loadHistory() {
-            const tbody = document.getElementById('historyBody');
-            tbody.innerHTML = '';
-            const mealsHistory = JSON.parse(localStorage.getItem('mealsData')) || [];
-
-            // היפוך המערך כדי שהארוחות החדשות יופיעו למעלה
-            mealsHistory.slice().reverse().forEach((meal, index) => {
-                const tr = document.createElement('tr');
-                
-                // לחיצה על שורה תציג פופ-אפ עם כל הנתונים והתחושות
-                tr.onclick = function() {
-                    alert(`פירוט ארוחה:
-תאריך: ${meal.date}
-שעת אישור: ${meal.startTime}
-שעת סיום: ${meal.endTime}
-רמת רעב: ${meal.hunger} | חשק: ${meal.flavor}
-אחוז סיפוק צפוי: ${meal.satisfaction}%
-מה אכלתי: ${meal.food}
-איך הרגשתי אחרי: ${meal.feelings || "לא הוזן"}`);
-                };
-
-                tr.innerHTML = `
-                    <td>${meal.date}</td>
-                    <td>${meal.endTime}</td>
-                    <td>${meal.food}</td>
-                `;
-                tbody.appendChild(tr);
+        window.saveToCloud = function() {
+            const food = document.getElementById('foodInput').value;
+            db.collection("meals").add({
+                name: food,
+                date: new Date().toLocaleDateString('he-IL')
+            })
+            .then(() => {
+                alert("נשמר בענן!");
+                document.getElementById('foodInput').value = '';
+            })
+            .catch((error) => {
+                alert("שגיאה: " + error.message);
             });
-        }
-
-        // טעינת ההיסטוריה בעת פתיחת הדף
-        window.onload = loadHistory;
+        };
     </script>
 </body>
 </html>
-
