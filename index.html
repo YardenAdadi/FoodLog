@@ -3,27 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>היומן שלי</title>
+    <title>יומן האוכל שלי</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background-color: #fff0f5; padding: 20px; text-align: center; margin: 0; }
-        .container { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 400px; margin: 50px auto; }
-        h1 { color: #d81b60; font-size: 24px; }
-        input { width: 100%; padding: 15px; border: 2px solid #fce4ec; border-radius: 15px; margin: 20px 0; box-sizing: border-box; font-size: 16px; }
-        button { background-color: #d81b60; color: white; border: none; padding: 15px 30px; border-radius: 15px; font-size: 18px; font-weight: bold; width: 100%; cursor: pointer; }
+        body { font-family: -apple-system, sans-serif; background-color: #fff0f5; padding: 20px; text-align: center; }
+        .card { background: white; padding: 25px; border-radius: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); max-width: 400px; margin: 20px auto; }
+        h1 { color: #d81b60; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        button { background-color: #d81b60; color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; width: 100%; margin-top: 10px; }
+        .nav-btn { background-color: #fce4ec; color: #d81b60; margin: 5px; }
+        .hidden { display: none; }
+        .log-item { border-bottom: 1px solid #eee; padding: 10px; text-align: right; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>היומן שלי 🌸</h1>
-        <input type="text" id="foodInput" placeholder="מה אכלתי היום?">
-        <button id="saveBtn">שמרי לענן</button>
+    <div style="margin-bottom: 20px;">
+        <button class="nav-btn" onclick="showScreen('input')">הזנת נתונים</button>
+        <button class="nav-btn" onclick="showScreen('history')">יומן לפי ימים</button>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+    <div id="inputScreen" class="card">
+        <h1>הזנת נתונים 🌸</h1>
+        <input type="number" id="hunger" placeholder="רמת רעב (1-5)">
+        <select id="flavor">
+            <option value="מתוק">מתוק</option>
+            <option value="מלוח">מלוח</option>
+        </select>
+        <input type="number" id="satisfaction" placeholder="אחוז סיפוק (0-100)">
+        <input type="text" id="food" placeholder="מה אכלתי?">
+        <button onclick="saveMeal()">שמרי ביומן</button>
+    </div>
 
+    <div id="historyScreen" class="card hidden">
+        <h1>היומן שלי 📖</h1>
+        <div id="historyList"></div>
+    </div>
+
+    <script>
         const firebaseConfig = {
             apiKey: "AIzaSyDsCb5PySFnEH-6aEg4vpkAJvuXOueRQ6A",
             authDomain: "foodlog-34143.firebaseapp.com",
@@ -32,24 +50,38 @@
             messagingSenderId: "340021087859",
             appId: "1:340021087859:web:8f401ae72a35c13c77e406"
         };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        function showScreen(screen) {
+            document.getElementById('inputScreen').classList.toggle('hidden', screen !== 'input');
+            document.getElementById('historyScreen').classList.toggle('hidden', screen !== 'history');
+            if (screen === 'history') loadHistory();
+        }
 
-        document.getElementById('saveBtn').addEventListener('click', async () => {
-            const food = document.getElementById('foodInput').value;
-            if (!food) return;
-            try {
-                await addDoc(collection(db, "meals"), { 
-                    name: food, 
-                    date: new Date().toLocaleDateString('he-IL') 
-                });
-                alert("נשמר ביומן!");
-                document.getElementById('foodInput').value = '';
-            } catch (e) {
-                alert("שגיאה בשמירה: " + e.message);
-            }
-        });
+        async function saveMeal() {
+            const data = {
+                hunger: document.getElementById('hunger').value,
+                flavor: document.getElementById('flavor').value,
+                satisfaction: document.getElementById('satisfaction').value,
+                food: document.getElementById('food').value,
+                date: new Date().toLocaleDateString('he-IL'),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await db.collection("meals").add(data);
+            alert("נשמר!");
+            document.getElementById('food').value = '';
+        }
+
+        async function loadHistory() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+            const snapshot = await db.collection("meals").orderBy("timestamp", "desc").get();
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                list.innerHTML += `<div class="log-item"><b>${d.date}</b>: ${d.food} (סיפוק: ${d.satisfaction}%)</div>`;
+            });
+        }
     </script>
 </body>
 </html>
