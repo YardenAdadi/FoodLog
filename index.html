@@ -2,17 +2,12 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>היומן שלי</title>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-</head>
-<body>
-    <h1>המסע שלי 🌸</h1>
-    <input type="text" id="foodInput" placeholder="מה אכלתי?">
-    <button onclick="saveToCloud()">שמרי לענן</button>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-    <script>
-        // המפתחות שלך
         const firebaseConfig = {
             apiKey: "AIzaSyDsCb5PySFnEH-6aEg4vpkAJvuXOueRQ6A",
             authDomain: "foodlog-34143.firebaseapp.com",
@@ -22,24 +17,31 @@
             appId: "1:340021087859:web:8f401ae72a35c13c77e406"
         };
 
-        // אתחול בשיטה הישנה שתואמת לקישורים שלך
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        window.saveToCloud = function() {
+        window.saveToCloud = async function() {
             const food = document.getElementById('foodInput').value;
-            db.collection("meals").add({
-                name: food,
-                date: new Date().toLocaleDateString('he-IL')
-            })
-            .then(() => {
-                alert("נשמר בענן!");
-                document.getElementById('foodInput').value = '';
-            })
-            .catch((error) => {
-                alert("שגיאה: " + error.message);
-            });
+            if (!food) return;
+            await addDoc(collection(db, "meals"), { name: food, date: new Date().toLocaleDateString('he-IL') });
+            alert("נשמר!");
+            document.getElementById('foodInput').value = '';
         };
     </script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #fce4ec; padding: 20px; text-align: center; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
+        h1 { color: #c2185b; }
+        input { width: 80%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; margin-bottom: 10px; }
+        button { background-color: #d81b60; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>המסע שלי 🌸</h1>
+    <div class="card">
+        <input type="text" id="foodInput" placeholder="מה אכלתי היום?">
+        <br>
+        <button onclick="saveToCloud()">שמרי לענן</button>
+    </div>
 </body>
 </html>
